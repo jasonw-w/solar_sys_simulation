@@ -2,16 +2,16 @@ import matplotlib.pyplot as plt
 import math
 from body import solar_sys_body
 import itertools
-class Solar_system:
+class SolarSystemSimulation:
 
-    def __init__(self, size):
+    def __init__(self, size, G):
         self.size = size
         self.bodies = []
         self.fig, self.ax = plt.subplots(
             1,
             1,
             subplot_kw={"projection" : "3d"},
-            figsize=(self.size/50, self.size/50)
+            figsize=(10, 10)
         )
         self.fig.tight_layout()
         self.ax.view_init(0, 0)
@@ -40,39 +40,4 @@ class Solar_system:
             for second in copy[idx+1:]:
                 first.acceleration(second)
 
-class Sun(solar_sys_body):
-    def __init__(self, solarsys, mass=1e6, position=(0,0,0), velocity=(0,0,0),):
-        super(Sun, self).__init__(solarsys, mass, position, velocity)
-        self.colour = "yellow"
 
-class Planet(solar_sys_body):
-    colours = itertools.cycle([(1, 0, 0), (0, 1, 0), (0, 0, 1)])
-    def __init__(self, solarsys, mass=10, position=(0,0,0), velocity=(0,0,0)):
-        super(Planet, self).__init__(solarsys, mass, position, velocity)
-        self.colour = next(Planet.colours)
-
-if __name__ == "__main__":
-    solarsys = Solar_system(8000)
-    sun = Sun(solarsys)
-    r1 = 200
-    r2 = 400
-    v1_mag = math.sqrt(sun.mass/r1)
-    v2_mag = math.sqrt(sun.mass/r2)
-    planets = (
-        Planet(
-            solarsys,
-            mass = 5,
-            position=(100 ,150, 100),
-            velocity=(0, v1_mag, 0)
-        ),
-        Planet(
-            solarsys,
-            mass = 5,
-            position=(200, -120, 150),
-            velocity=(v2_mag, 0.0, 0)
-        )
-    )
-    while True:
-        solarsys.calculate_body_interactions()
-        solarsys.update_all()
-        solarsys.draw_all()
