@@ -10,18 +10,30 @@ class solar_sys_body:
     def __init__(
             self,
             solar_system,
+            G,
             mass,
             position=Vector(0,0,0),
-            velocity=Vector(0,0,0)
+            velocity=Vector(0,0,0),
+            colour="black",
+            stable_orbit=False,
+            e=0,#eccentricity
+            mass_of_central_body=0,
         ):
         self.solarsys = solar_system
         self.mass = mass
         self.position = position
-        self.velocity = Vector(*velocity)
+        self.r = math.sqrt(sum(x**2 for x in position))
+        self.stable_orbit = stable_orbit
+        self.velocity = Vector(*velocity) if stable_orbit == False else Vector (0, 0, 0)
+        if self.stable_orbit:
+            self.v_circular = math.sqrt(G*mass_of_central_body*((1+e)/(self.r*(1-e))))
+            self.velocity  = Vector (0, self.v_circular, 0)
         self.solarsys.add_body(self)
         self.display_size = max(math.log(self.mass, self.display_log_base), self.minimum_display_size)
-        self.colour = "black"
+        self.colour = "black" if colour is None else colour
         self.position_history = []
+        self.G = G
+            
     
     def draw(self):
         self.solarsys.ax.plot(
@@ -47,7 +59,9 @@ class solar_sys_body:
     def acceleration(self, other):
         distance = Vector(*other.position) - Vector(*self.position)
         dist_mag = distance.get_magnitude()
-        force_mag = self.mass*other.mass/(dist_mag**2)
+        if dist_mag < 1e-9:
+            dist_mag = 1e-9
+        force_mag = self.G*self.mass*other.mass/(dist_mag**2)
         force = distance.normalise()*force_mag
         reverse = 1
         for body in self, other:

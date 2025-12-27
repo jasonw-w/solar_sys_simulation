@@ -1,9 +1,17 @@
-from vector import Vector
-from solar_system import Solar_system
+import matplotlib.pyplot as plt
+import math
 from body import solar_sys_body
-solar_sys = Solar_system(400)
-body = solar_sys_body(solar_sys, 100, velocity=(1,1,1))
-body2 = solar_sys_body(solar_sys, 20, (0.5, 0.5, 0.5), (0, 0, 0))
-for _ in range(100):
-    solar_sys.update_all()
-    solar_sys.draw_all()
+import itertools
+from solar_system import SolarSystemSimulation
+from loadplanets import json_loader
+G = 1
+solarsys = SolarSystemSimulation(4000, G)
+loader = json_loader(r"planets.json", solarsys, G)
+planets = loader.load_data()
+# for planet in planets:
+#     solarsys.add_body(planet)
+
+while True:
+    solarsys.calculate_body_interactions()
+    solarsys.update_all()
+    solarsys.draw_all()

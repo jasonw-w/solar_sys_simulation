@@ -1,0 +1,38 @@
+{
+    "planets" : [
+        {
+            "name" : "Sun",
+            "id" : 0,
+            "mass" : 1e4,
+            "initial_position" : [0, 0, 0],
+            "initial_velocity" : [0, 0, 0],
+            "create_stable_orbit" : 0,
+            "eccentricity" : 0,
+            "id_of_central_body" : null,
+            "colour" : "yellow"
+        },
+        {
+            "name" : null,
+            "id" : 1,
+            "mass" : 20,
+            "initial_position": [500, 500, 500],
+            "initial_velocity": [0, 1, 0],
+            "create_stable_orbit" : 1,
+            "eccentricity" : 0.5,
+            "id_of_central_body" : 0,
+            "colour" : "black"
+        },
+        {
+            "name" : null,
+            "id" : 2,
+            "mass" : 20,
+            "initial_position": [800, 800, 800],
+            "initial_velocity" : [0, 1, 0],
+            "create_stable_orbit" : 1,
+            "eccentricity" : 0.5,
+            "id_of_central_body" : 0,
+            "colour" : "black"
+        }
+    ]
+}
+    
