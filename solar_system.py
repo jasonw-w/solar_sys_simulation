@@ -32,7 +32,7 @@ class SolarSystemSimulation:
         self.ax.set_xlim((-self.size/2, self.size/2))
         self.ax.set_ylim((-self.size/2, self.size/2))
         self.ax.set_zlim((-self.size/2, self.size/2))
-        plt.pause(0.001)
+        # plt.pause(0.001)
         for body in self.bodies:
             if len(body.position_history) > 2500:  # Limit history size
                 body.position_history = body.position_history[-2500:]

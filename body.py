@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 class solar_sys_body:
     #consts
     minimum_display_size = 10
-    display_log_base = 1.3
+    display_log_base = 3
 
     def __init__(
             self,
