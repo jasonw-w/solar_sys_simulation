@@ -9,9 +9,9 @@ import matplotlib.animation as animation
 G = 1
 # log_path = r"simulation.txt"
 log_path = None
-dt = 1e-7
-record = False
-solarsys = SolarSystemSimulation(10, G, log_path, dt)
+dt = 1e-6
+record = True
+solarsys = SolarSystemSimulation(60, G, log_path, dt)
 loader = json_loader(r"solar_system.json", solarsys, G, log_path, dt)
 planets = loader.load_data()
 # for planet in planets:

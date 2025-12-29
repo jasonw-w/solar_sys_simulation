@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 class solar_sys_body:
     #consts
     minimum_display_size = 10
-    display_log_base = 3
+    display_log_base = 2
 
     def __init__(
             self,
@@ -98,7 +98,7 @@ class solar_sys_body:
                 self.position[2] + self.velocity[2]*dt
             )
             if self.counter % 100 == 0:
-                self.position_history.append(self.position + self.velocity)
+                self.position_history.append(self.position)
             self.counter += 1
 
     def acceleration(self, other):

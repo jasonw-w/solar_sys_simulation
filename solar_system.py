@@ -17,6 +17,19 @@ class SolarSystemSimulation:
         )
         self.fig.tight_layout()
         self.ax.view_init(90, -90)
+        self.fig.canvas.mpl_connect('scroll_event', self.on_scroll)
+
+    def on_scroll(self, event):
+        if event.inaxes == self.ax:
+            zoom_factor = 1.1
+            if event.button == 'up':
+                self.size /= zoom_factor
+            if event.button == 'down':
+                self.size *= zoom_factor
+            if self.size < 1:
+                self.size = 1
+            if self.size > 1000:
+                self.size = 1000
 
     def add_body(self, body):
         self.bodies.append(body)
