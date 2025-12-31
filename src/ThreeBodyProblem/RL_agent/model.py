@@ -24,19 +24,45 @@ class Actor_Critic(nn.Module):
         num_output
     ):
         super(Actor_Critic, self).__init__()
-        self.fc1 = nn.Linear(num_input, 512)
+        self.conv1 = nn.Conv1d(in_channels=7, out_channels=32, kernel_size=1)
+        self.conv2 = nn.Conv1d(in_channels=32, out_channels=64, kernel_size=1)
+        self.conv3 = nn.Conv1d(in_channels=64, out_channels=128, kernel_size=1)
+        self.flatten_dim = 3*128
+
+        self.fc1 = nn.Linear(self.flatten_dim, 512)
         self.ln1 = nn.LayerNorm(512)
         self.res_block1 = ResBlock(512)
         self.res_block2 = ResBlock(512)
         # self.critic1 = ResBlock(512)
-        self.critic1 = nn.Linear(512, 256)
-        self.critic2 = nn.Linear(256, 1)
-        
-        self.actor_res   = ResBlock(512)
-        self.actor_out = nn.Linear(512, num_output)
+        self.critic1 = ResBlock(512)
+        self.critic2 = ResBlock(512)
+        self.critic3 = nn.Linear(512, 256)
+        self.critic4 = ResBlock(256)
+        self.critic5 = nn.Linear(256, 1)
+        self.actor1 = ResBlock(512)
+        self.actor2 = ResBlock(512)
+        self.actor3 = nn.Linear(512, num_output)
         self.log_std = nn.Parameter(torch.zeros(num_output))
 
     def forward(self, x):
+        #data prep
+        batch_size = x.shape[0]
+        pos = x[:, 0:9].view(batch_size, 3, 3) 
+        vel = x[:, 9:18].view(batch_size, 3, 3)
+        mass = x[:, 18:21].view(batch_size, 3, 1)
+        bodies = torch.cat([pos, vel, mass], dim=2)
+        cnn_input = bodies.permute(0, 2, 1)
+
+        #cnn
+        x_cnn = self.conv1(cnn_input)
+        x_cnn = f.relu(x_cnn)
+        x_cnn = self.conv2(x_cnn)
+        x_cnn = f.relu(x_cnn)
+        x_cnn = self.conv3(x_cnn)
+        x_cnn = f.relu(x_cnn)
+        x = x_cnn.view(batch_size, -1)
+
+        #res&linear
         x = self.fc1(x)
         x = self.ln1(x)
         x = f.relu(x)
@@ -45,12 +71,22 @@ class Actor_Critic(nn.Module):
         x = self.res_block2(x)
         x = f.relu(x)
 
-        action_mean = self.actor_res(x)
-        action_mean = f.relu(action_mean)
-        action_mean = self.actor_out(action_mean)
+        #actor
+        a = self.actor1(x)
+        a = f.relu(a)
+        a = self.actor2(a)
+        a = f.relu(a)
+        action_mean = self.actor3(a)
 
+        #critic
         value = self.critic1(x)
         value = f.relu(value)
         value = self.critic2(value)
+        value = f.relu(value)
+        value = self.critic3(value)
+        value = f.relu(value)
+        value = self.critic4(value)
+        value = f.relu(value)
+        value = self.critic5(value)
         # value = self.critic3(value)
         return action_mean, value, self.log_std
