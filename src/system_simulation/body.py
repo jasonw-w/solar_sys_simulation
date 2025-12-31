@@ -1,4 +1,4 @@
-from vector import Vector
+from .vector import Vector
 import math
 
 import matplotlib.pyplot as plt

@@ -1,5 +1,5 @@
 import gymnasium as gym
-from env.fast_sim import fast_system_simulation
+from .fast_sim import fast_system_simulation
 import numpy as np
 import torch.nn.functional as F
 import math
@@ -26,13 +26,13 @@ class ThreeBodyEnv(gym.Env):
         import torch
         new_velocity = torch.tensor(action,     dtype=torch.float32).view(3,3)
         self.simulation.v = new_velocity
-        # Do not call reset here, it wipes the position!
         T = 10000
         dt = 1e-2
         reward = 0
         for t in range(T):
             pos, v = self.simulation.step(dt)
-            dists = F.pdist(pos)
+            # dists = F.pdist(pos)
+            dists = torch.norm(pos, dim=1)
             min_dist = dists.min()
             max_dist = dists.max()
             # Overlap penalty

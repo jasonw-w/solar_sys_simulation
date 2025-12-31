@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import math
-from body import solar_sys_body
+from .body import solar_sys_body
 import itertools
 from matplotlib.widgets import Slider, Button
 class SolarSystemSimulation:

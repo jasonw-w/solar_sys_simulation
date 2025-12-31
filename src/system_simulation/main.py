@@ -19,9 +19,10 @@ record = False
 quick_sim = False #Barnes-Hut Algorithm
 # json_paths = [r"solar_system.json", r"solar_system2.json"]
 # json_paths = [r"solar_system2.json"]
-json_paths = [r'data\predicted_system.json']
-# shift = [Vector(30, 30, 30), Vector(-30, -30, -30)]
-# shift = [Vector(30, 30, 30)]
+import os
+# dynamic path finding
+data_path1 = r'../data/predicted_system.json'
+json_paths = [data_path1]
 shift = [Vector(-3, -3, -3)]
 def main(G, log_path, dt, record, quick_sim, json_paths):
     solarsys = SolarSystemSimulation(100, G, log_path, dt)

@@ -1,6 +1,6 @@
-from body import solar_sys_body
+from .body import solar_sys_body
 import json
-from vector import Vector
+from .vector import Vector
 # from solar_system import SolarSystemSimulation
 class json_loader:
     def __init__(self, solar_sys, G, log_path, dt):

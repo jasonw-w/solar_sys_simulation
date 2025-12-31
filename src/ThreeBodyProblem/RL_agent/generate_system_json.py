@@ -1,18 +1,9 @@
-import json
+from ThreeBodyProblem.env.three_body_gym import ThreeBodyEnv
+from ThreeBodyProblem.RL_agent.model import Actor_Critic
 import os
-import sys
+import json
 import torch
 import numpy as np
-
-# Add src/ThreeBodyProblem to sys.path to allow imports
-current_dir = os.path.dirname(os.path.abspath(__file__))
-# src/ThreeBodyProblem/RL_agent -> src/ThreeBodyProblem
-three_body_dir = os.path.dirname(current_dir)
-sys.path.append(three_body_dir)
-
-from env.three_body_gym import ThreeBodyEnv
-from RL_agent.model import Actor_Critic
-
 def create_body(name, body_id, mass, position, velocity, colour, simulation=1, 
                 create_stable_orbit=0, eccentricity=0, central_body_id=0):
     """
@@ -39,13 +30,29 @@ def main():
     masses_val = [1, 1, 1]
     
     # Setup paths
-    project_root = os.path.abspath(os.path.join(three_body_dir, "..", ".."))
-    model_path = os.path.join(project_root, "best_agent.pth")
-    output_path = os.path.join(project_root, "data", "predicted_system.json")
+    # Setup paths
+    # Assuming running from project root where data/ exists or relative to package
+    # Setup paths
+    # Try finding best_agent.pth in CWD or parent directory
+    model_path = "best_agent.pth"
+    if not os.path.exists(model_path):
+        # Try parent directory (if running from src)
+        possible_path = os.path.join("..", "best_agent.pth")
+        if os.path.exists(possible_path):
+            model_path = possible_path
+
+    # Assure data directory exists
+    data_dir = "data"
+    if not os.path.exists(data_dir):
+        # Try parent data directory
+        if os.path.exists(os.path.join("..", "data")):
+            data_dir = os.path.join("..", "data")
+    
+    output_path = os.path.join(data_dir, "predicted_system.json")
     
     print(f"Loading model from: {model_path}")
     if not os.path.exists(model_path):
-        print("Error: best_agent.pth not found.")
+        print("Error: best_agent.pth not found. Please run training first or ensure file is in project root.")
         return
 
     # Initialize environment
