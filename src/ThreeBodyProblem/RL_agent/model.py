@@ -17,6 +17,18 @@ class ResBlock(nn.Module):
         x += identity
         return x
 
+class AttentionBlock(nn.Module):
+    def __init__(self, embed_dim, num_heads):
+        super().__init__()
+        self.layer = nn.TransformerEncoderLayer(
+            d_model=embed_dim,
+            nhead=num_heads,
+            dim_feedforward=embed_dim*4, 
+            batch_first=True,
+            norm_first=True
+        )
+    def forward(self, x):
+        return self.layer(x)
 class Actor_Critic(nn.Module):
     def __init__(
         self,
@@ -24,9 +36,11 @@ class Actor_Critic(nn.Module):
         num_output
     ):
         super(Actor_Critic, self).__init__()
-        self.conv1 = nn.Conv1d(in_channels=7, out_channels=32, kernel_size=1)
+        self.conv1 = nn.Conv1d(in_channels=num_input//3, out_channels=32, kernel_size=1)
         self.conv2 = nn.Conv1d(in_channels=32, out_channels=64, kernel_size=1)
         self.conv3 = nn.Conv1d(in_channels=64, out_channels=128, kernel_size=1)
+        
+        self.attn = AttentionBlock(embed_dim=128, num_heads=4)
         self.flatten_dim = 3*128
 
         self.fc1 = nn.Linear(self.flatten_dim, 512)
@@ -39,6 +53,7 @@ class Actor_Critic(nn.Module):
         self.critic3 = nn.Linear(512, 256)
         self.critic4 = ResBlock(256)
         self.critic5 = nn.Linear(256, 1)
+
         self.actor1 = ResBlock(512)
         self.actor2 = ResBlock(512)
         self.actor3 = nn.Linear(512, num_output)
@@ -47,10 +62,10 @@ class Actor_Critic(nn.Module):
     def forward(self, x):
         #data prep
         batch_size = x.shape[0]
-        pos = x[:, 0:9].view(batch_size, 3, 3) 
-        vel = x[:, 9:18].view(batch_size, 3, 3)
+        rel_pos = x[:, 0:9].view(batch_size, 3, 3) / 50.0
+        vel = x[:, 9:18].view(batch_size, 3, 3) / 5.0
         mass = x[:, 18:21].view(batch_size, 3, 1)
-        bodies = torch.cat([pos, vel, mass], dim=2)
+        bodies = torch.cat([rel_pos, vel, mass], dim=2)
         cnn_input = bodies.permute(0, 2, 1)
 
         #cnn
@@ -60,7 +75,10 @@ class Actor_Critic(nn.Module):
         x_cnn = f.relu(x_cnn)
         x_cnn = self.conv3(x_cnn)
         x_cnn = f.relu(x_cnn)
-        x = x_cnn.view(batch_size, -1)
+        
+        attn_input = x_cnn.permute(0, 2, 1)
+        x_attn = self.attn(attn_input)
+        x = x_attn.reshape(batch_size, -1)
 
         #res&linear
         x = self.fc1(x)

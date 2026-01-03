@@ -3,13 +3,13 @@ import torch.optim as optim
 import numpy as np
 from ThreeBodyProblem.env.three_body_vectorized import VectorizedThreeBodyEnv
 from ThreeBodyProblem.RL_agent.model import Actor_Critic
-lr = 1e-5
+lr = 3e-4
 gamma = 0
 tau = 0.9
 epochs = 10
 batch_size = 256
 clip_eps = 0.2
-entropy_coef = 0.05
+entropy_coef = 0.15
 max_grad_norm = 0.5
 num_envs = 2048
 # steps_per_update = 128
@@ -20,21 +20,32 @@ env = VectorizedThreeBodyEnv(
     num_envs=num_envs,
     device=device
 )
-num_input = 21
+num_input = 36
 num_output = 9
 agent = Actor_Critic(num_input, num_output).to(device)
 optimizer = optim.AdamW(agent.parameters(), lr=lr)
 for param_group in optimizer.param_groups:
     param_group['initial_lr'] = lr
-scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=75, gamma=0.9, last_epoch=150)
+scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=75, gamma=0.5, last_epoch=200)
 print("start training")
 iterations_per_update = max(1, steps_per_update // num_envs)
 score = 0
 best_score = -float('inf')
-import matplotlib.pyplot as plt
+load = False
 
+if load:
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    agent = Actor_Critic(num_input, num_output).to(device)
+    state_dict = torch.load("best_agent.pth", map_location=device)
+    agent.load_state_dict(state_dict)
+    agent.eval()  # disable dropout, etc.
+
+import matplotlib.pyplot as plt
 plt.ion() # Interactive mode
 fig, (ax1, ax2, ax3) = plt.subplots(3, 1, sharex=True)
+plt.show(block=False)
+fig.canvas.manager.set_window_title("Training Progress")
+plt.tight_layout()
 ax1.set_title("Training Loss")
 line1, = ax1.plot([], [], color='red')
 loss_plt = []
@@ -62,7 +73,7 @@ while True:
             log_prob = dist.log_prob(action).sum(axis=-1)
 
         next_state, step_rewards, dones, info = env.step(action)
-
+        step_rewards /= (env.max_step/100)
         batch_log_probs.append(log_prob)
         batch_values.append(value.squeeze(-1))
         batch_states.append(state)
@@ -144,12 +155,12 @@ while True:
             loss.backward()
             torch.nn.utils.clip_grad_norm_(agent.parameters(), max_grad_norm)
             optimizer.step()
-            scheduler.step()
             
             total_loss_val += loss.item()
             total_actor_loss += actor_loss.item()
             total_critic_loss += critic_loss.item()
             count += 1
+    scheduler.step()
     rewards_t = torch.cat(batch_rewards)
     avg_score = rewards_t.mean().item()
     current_score = avg_score
@@ -159,6 +170,10 @@ while True:
     
     print(f"Update: {epoch_idx} | Score: {avg_score:.2f} | Loss: {total_loss_val/count:.4f} "
           f"(A: {total_actor_loss/count:.4f}, C: {total_critic_loss/count:.4f}) | Steps: {avg_steps:.1f}") 
+    if avg_score > 0.9:
+        if env.maxstep < 30000:
+            env.max_step += 1000
+            print(f"Increases max step to {env.max_step}")
     if current_score > best_score:
         best_score = current_score
         torch.save(agent.state_dict(), "best_agent.pth")
@@ -180,3 +195,4 @@ while True:
     ax3.autoscale_view()
     fig.canvas.draw() 
     fig.canvas.flush_events()
+    plt.pause(0.01)

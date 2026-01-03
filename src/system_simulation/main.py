@@ -3,25 +3,29 @@ import matplotlib
 import imageio_ffmpeg
 matplotlib.rcParams['animation.ffmpeg_path'] = imageio_ffmpeg.get_ffmpeg_exe()
 import math
-from body import solar_sys_body
 import itertools
-from solar_system import SolarSystemSimulation
-from loadplanets import json_loader
 import time
 import matplotlib.animation as animation
-from vector import Vector
+
+from system_simulation.body import solar_sys_body
+from system_simulation.solar_system import SolarSystemSimulation
+from system_simulation.loadplanets import json_loader
+from system_simulation.vector import Vector
 count = 0
 G = 1
 # log_path = r"simulation.txt"
 log_path = None
-dt = 1e-4
+dt = 5e-3
 record = False
 quick_sim = False #Barnes-Hut Algorithm
 # json_paths = [r"solar_system.json", r"solar_system2.json"]
 # json_paths = [r"solar_system2.json"]
 import os
-# dynamic path finding
-data_path1 = r'../data/predicted_system.json'
+from importlib import resources
+try:
+    data_path1 = str(resources.files("system_simulation").joinpath("data/predicted_system.json"))
+except Exception:
+    data_path1 = os.path.join(os.path.dirname(__file__), '..', 'data', 'predicted_system.json')
 json_paths = [data_path1]
 shift = [Vector(-3, -3, -3)]
 def main(G, log_path, dt, record, quick_sim, json_paths):

@@ -1,17 +1,14 @@
-from ThreeBodyProblem.env.three_body_gym import ThreeBodyEnv
 from ThreeBodyProblem.RL_agent.model import Actor_Critic
 import os
 import json
 import torch
 import numpy as np
-def create_body(name, body_id, mass, position, velocity, colour, simulation=1, 
-                create_stable_orbit=0, eccentricity=0, central_body_id=0):
-    """
-    Creates a dictionary representing a celestial body for the simulation.
-    """
-    if central_body_id == body_id:
-         central_body_id = None
+from pathlib import Path
 
+
+def create_body(name, body_id, mass, position, velocity, colour, simulation=1, create_stable_orbit=0, eccentricity=0, central_body_id=0):
+    if central_body_id == body_id:
+        central_body_id = None
     return {
         "name": name,
         "id": body_id,
@@ -22,130 +19,82 @@ def create_body(name, body_id, mass, position, velocity, colour, simulation=1,
         "eccentricity": eccentricity,
         "id_of_central_body": central_body_id,
         "colour": colour,
-        "simulation": simulation
+        "simulation": simulation,
     }
 
-def main():
-    # Define masses as in training or desired
-    masses_val = [1, 1, 1]
-    
-    # Setup paths
-    # Setup paths
-    # Assuming running from project root where data/ exists or relative to package
-    # Setup paths
-    # Try finding best_agent.pth in CWD or parent directory
-    model_path = "best_agent.pth"
-    if not os.path.exists(model_path):
-        # Try parent directory (if running from src)
-        possible_path = os.path.join("..", "best_agent.pth")
-        if os.path.exists(possible_path):
-            model_path = possible_path
 
-    # Assure data directory exists
-    data_dir = "data"
-    if not os.path.exists(data_dir):
-        # Try parent data directory
-        if os.path.exists(os.path.join("..", "data")):
-            data_dir = os.path.join("..", "data")
-    
-    output_path = os.path.join(data_dir, "predicted_system.json")
-    
-    print(f"Loading model from: {model_path}")
-    if not os.path.exists(model_path):
-        print("Error: best_agent.pth not found. Please run training first or ensure file is in project root.")
+def main():
+    masses_val = [1.0, 1.0, 1.0]
+    base_dir = Path(__file__).resolve().parents[2]
+
+    model_path = Path("best_agent.pth")
+    if not model_path.exists():
+        alt_model = base_dir.parent / "best_agent.pth"
+        if alt_model.exists():
+            model_path = alt_model
+
+    if not model_path.exists():
+        print("Error: best_agent.pth not found.")
         return
 
-    # Initialize environment
-    # We use random positions/velocities for initialization, 
-    # but the agent will predict the *correct* initial velocity for the *given* Position.
-    # Note: If the agent was trained to find velocities for ANY position, we can pass random.
-    # If it was trained on fixed positions, we should use those.
-    # Based on train.py, it was initialized with randn(3,3). 
-    # But does env.reset() re-randomize? 
-    # We will assume we want to generate a valid trajectory for a *new* random configuration 
-    # or the standard one. Let's use what env.reset() gives us.
-    
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    
-    env = ThreeBodyEnv(
-        masses=torch.tensor(masses_val, dtype=torch.float32),
-        initial_pos=torch.randn(3,3),
-        initial_v=torch.randn(3,3)
-    )
-    
-    # Initialize Agent
-    num_input = env.observation_space.shape[0]
-    num_output = env.action_space.shape[0]
-    agent = Actor_Critic(num_input, num_output).to(device)
-    
-    # Load Weights
+    data_dir = base_dir / "system_simulation" / "data"
+    data_dir.mkdir(parents=True, exist_ok=True)
+    output_path = data_dir / "predicted_system.json"
+
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+
+    agent = Actor_Critic(21, 9).to(device)
     agent.load_state_dict(torch.load(model_path, map_location=device))
-    agent.eval() # Set to evaluation mode
-    
-    # Get a state
-    # env.reset() will return the initial state (positions, velocities, masses)
-    # Note: The 'velocities' in the state are the initial (random/zero) ones. 
-    # The agent's JOB is to look at this state (mainly positions/masses) and output NEW velocities.
-    state, _ = env.reset()
-    state_t = torch.FloatTensor(state).unsqueeze(0).to(device)
-    
-    # Predict
+    agent.eval()
+
+    abs_pos = torch.randn(3, 3).to(device) * 5.0
+
+    r12 = abs_pos[0] - abs_pos[1]
+    r23 = abs_pos[1] - abs_pos[2]
+    r31 = abs_pos[2] - abs_pos[0]
+    flat_rel_pos = torch.cat([r12, r23, r31])
+
+    dummy_vel = torch.randn(3, 3).to(device)
+    flat_vel = dummy_vel.flatten()
+
+    mass_tensor = torch.tensor(masses_val, dtype=torch.float32).to(device)
+
+    state_vector = torch.cat([flat_rel_pos, flat_vel, mass_tensor]).unsqueeze(0)
+
     with torch.no_grad():
-        # returns action_mean, value, log_std
-        action_mean, _, _ = agent(state_t)
-        # The action represents the predicted velocity
+        action_mean, _, _ = agent(state_vector)
         predicted_velocities = action_mean.cpu().numpy()[0].reshape(3, 3)
-        
-    # Extract positions from the state (first 9 elements are flat positions)
-    flat_pos = state[:9]
-    positions = flat_pos.reshape(3, 3)
-    
-    # Generate JSON
+
+    positions_np = abs_pos.cpu().numpy()
+
     planets = []
     colors = ["yellow", "blue", "grey"]
     names = ["Star", "Planet1", "Planet2"]
-    
-    # Scale inputs?
-    # The simulation/agent seems to use unitless or normalized values (randn). 
-    # The visualization/loadplanets might expect these values or scaled ones.
-    # Since `loadplanets` loads directly into `solar_sys_body`, the values in JSON 
-    # are used as-is. If the agent outputs small values (randn range), and the 
-    # visualizer expects AU (0-50) or pixels, it might be small.
-    # But `train.py` used `randn`. 
-    # However, `solar_system.json` uses masses like 1.9e7. 
-    # The agent uses masses [100, 1, 0.01].
-    # This implies the agent is trained on a DIFFERENT scale than `solar_system.json`.
-    # If we generate `predicted_system.json` with mass=100 and pos ~ 1.0, 
-    # it might look different or invisible if the camera is zoomed out for 10^7 mass systems.
-    # BUT, the user asked to generate output *from the agent*. So we should use the agent's scale.
-    # The user can zoom in or the visualization might auto-scale.
-    
-    for i in range(len(masses_val)):
+
+    for i in range(3):
         body = create_body(
             name=names[i],
             body_id=i,
             mass=masses_val[i],
-            position=positions[i].tolist(),
+            position=positions_np[i].tolist(),
             velocity=predicted_velocities[i].tolist(),
             colour=colors[i],
             simulation=1,
-            create_stable_orbit=0, # IMPORTANT: Use agent's velocity!
+            create_stable_orbit=0,
             eccentricity=0,
-            central_body_id=0 if i > 0 else None
+            central_body_id=0 if i > 0 else None,
         )
         planets.append(body)
 
-    system_data = {
-        "planets": planets
-    }
+    system_data = {"planets": planets}
 
-    with open(output_path, 'w') as f:
+    with open(output_path, "w") as f:
         json.dump(system_data, f, indent=2)
-    
-    print(f"Successfully generated predicted system at: {output_path}")
-    print("Sample Body 1:")
-    print(f"  Pos: {positions[1]}")
-    print(f"  Vel: {predicted_velocities[1]}")
+
+    print(f"Generated {output_path}")
+    print(f"Body 0 Pos: {positions_np[0]}")
+    print(f"Body 0 Vel: {predicted_velocities[0]}")
+
 
 if __name__ == "__main__":
     main()
