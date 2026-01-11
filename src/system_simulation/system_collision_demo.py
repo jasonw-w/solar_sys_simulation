@@ -14,7 +14,7 @@ count = 0
 G = 1
 # log_path = r"simulation.txt"
 log_path = None
-dt = 1e-8
+dt = 1e-5
 record = False
 quick_sim = False #Barnes-Hut Algorithm
 import os
