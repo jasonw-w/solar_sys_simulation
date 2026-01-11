@@ -3,12 +3,12 @@ import torch.optim as optim
 import numpy as np
 from ThreeBodyProblem.env.three_body_vectorized import VectorizedThreeBodyEnv
 from ThreeBodyProblem.RL_agent.model import Actor_Critic
-lr = 3e-4
+lr = 1e-4
 gamma = 0
 tau = 0.9
 epochs = 10
 batch_size = 256
-clip_eps = 0.2
+clip_eps = 0.3
 entropy_coef = 0.15
 max_grad_norm = 0.5
 num_envs = 2048
@@ -23,15 +23,15 @@ env = VectorizedThreeBodyEnv(
 num_input = 36
 num_output = 9
 agent = Actor_Critic(num_input, num_output).to(device)
-optimizer = optim.AdamW(agent.parameters(), lr=lr)
+optimizer = optim.Adam(agent.parameters(), lr=lr)
 for param_group in optimizer.param_groups:
     param_group['initial_lr'] = lr
-scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=75, gamma=0.5, last_epoch=200)
+scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=75, gamma=0.75, last_epoch=150)
 print("start training")
 iterations_per_update = max(1, steps_per_update // num_envs)
 score = 0
 best_score = -float('inf')
-load = False
+load = True
 
 if load:
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -171,7 +171,7 @@ while True:
     print(f"Update: {epoch_idx} | Score: {avg_score:.2f} | Loss: {total_loss_val/count:.4f} "
           f"(A: {total_actor_loss/count:.4f}, C: {total_critic_loss/count:.4f}) | Steps: {avg_steps:.1f}") 
     if avg_score > 0.9:
-        if env.maxstep < 30000:
+        if env.max_step < 30000:
             env.max_step += 1000
             print(f"Increases max step to {env.max_step}")
     if current_score > best_score:
@@ -180,19 +180,19 @@ while True:
         print("saved best model")
     epoch_idx += 1
 
-    loss_plt.append(total_loss_val/count)
-    score_plt.append(current_score)
-    steps_plt.append(avg_steps)
+    # loss_plt.append(total_loss_val/count)
+    # score_plt.append(current_score)
+    # steps_plt.append(avg_steps)
     
-    line1.set_data(range(len(loss_plt)), loss_plt)
-    ax1.relim()
-    ax1.autoscale_view()
-    line2.set_data(range(len(score_plt)), score_plt)
-    ax2.relim()
-    ax2.autoscale_view()
-    line3.set_data(range(len(steps_plt)), steps_plt)
-    ax3.relim()
-    ax3.autoscale_view()
-    fig.canvas.draw() 
-    fig.canvas.flush_events()
-    plt.pause(0.01)
+    # line1.set_data(range(len(loss_plt)), loss_plt)
+    # ax1.relim()
+    # ax1.autoscale_view()
+    # line2.set_data(range(len(score_plt)), score_plt)
+    # ax2.relim()
+    # ax2.autoscale_view()
+    # line3.set_data(range(len(steps_plt)), steps_plt)
+    # ax3.relim()
+    # ax3.autoscale_view()
+    # # fig.canvas.draw() 
+    # # fig.canvas.flush_events()
+    # plt.pause(0.01)
