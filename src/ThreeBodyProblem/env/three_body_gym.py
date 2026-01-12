@@ -14,7 +14,7 @@ class ThreeBodyEnv(gym.Env):
         import torch
         new_pos = torch.randn(3,3)
         self.simulation.pos = new_pos
-        self.simulation.v = torch.randn(3,3) # Placeholder, will be overwritten by step
+        self.simulation.v = torch.randn(3,3)
         
         pos = self.simulation.pos
         flat_pos = pos.flatten().cpu().numpy()
@@ -24,7 +24,7 @@ class ThreeBodyEnv(gym.Env):
         return observation, {}
     def step(self, action): 
         import torch
-        new_velocity = torch.tensor(action,     dtype=torch.float32).view(3,3)
+        new_velocity = torch.tensor(action, dtype=torch.float32).view(3,3)
         self.simulation.v = new_velocity
         T = 10000
         dt = 1e-2

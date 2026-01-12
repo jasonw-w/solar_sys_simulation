@@ -64,12 +64,7 @@ class SolarSystemSimulation:
                 body.point_artist.remove()
 
     def draw_all(self):
-        # Remove bodies that are out of bounds
         bodies_to_remove = []
-        # Re-check or pass from update_all? 
-        # Ideally update_all handles removal, but bodies_to_remove is local there.
-        # I will modify update_all to include the removal loop.
-
         self.bodies.sort(key=lambda item: item.position[0])
         self.ax.set_xlim((-self.size/2, self.size/2))
         self.ax.set_ylim((-self.size/2, self.size/2))

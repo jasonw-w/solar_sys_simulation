@@ -18,11 +18,9 @@ dt = 3e-6
 record = False
 quick_sim = False #Barnes-Hut Algorithm
 import os
-# dynamic path finding
 from importlib import resources
 path1 = str(resources.files("system_simulation").joinpath("data/solar_system.json"))
 path2 = str(resources.files("system_simulation").joinpath("data/solar_system2.json"))
-# Safely handle missing second file by duplicating the first if needed
 if not os.path.exists(path2):
     path2 = path1
 

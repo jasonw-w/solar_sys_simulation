@@ -24,11 +24,9 @@ import os
 import sys
 from importlib import resources
 
-# Accept multiple JSON paths from command line
 if len(sys.argv) > 1:
-    json_paths = sys.argv[1:]  # All args after script name
+    json_paths = sys.argv[1:]
 else:
-    # Default to bundled data
     json_paths = [str(resources.files("system_simulation").joinpath("data/solar_system.json"))]
 
 # Adjust shift list to match number of systems

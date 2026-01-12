@@ -11,7 +11,6 @@ class json_loader:
         self.dt = dt
     def planet_class_creator(self, simulate, mass, initial_position, initial_velocity, colour, stable_orbit, e, central_body_id, body_id, created_bodies, shift=None):
             if bool(simulate):
-                # Try to find central body in already created bodies first (to get updated velocity/pos)
                 central_body_instance = created_bodies.get(central_body_id)
                 
                 central_body_obj = next(
