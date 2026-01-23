@@ -65,10 +65,10 @@ class Actor_Critic(nn.Module):
         rel_pos = x[:, 0:9].view(batch_size, 3, 3) / 50.0
         vel = x[:, 9:18].view(batch_size, 3, 3) / 5.0
         mass = x[:, 18:21].view(batch_size, 3, 1)
-        accel     = x[:, 21:30].view(batch_size, 3, 3)
-        potential = x[:, 30:33].view(batch_size, 3, 1)
-        angles    = x[:, 33:36].view(batch_size, 3, 1)
-        bodies = torch.cat([rel_pos, vel, mass, accel, angles, potential], dim=2)
+        # accel     = x[:, 21:30].view(batch_size, 3, 3)
+        # potential = x[:, 30:33].view(batch_size, 3, 1)
+        # angles    = x[:, 33:36].view(batch_size, 3, 1)
+        bodies = torch.cat([rel_pos, vel, mass], dim=2)
         cnn_input = bodies.permute(0, 2, 1)
 
         #cnn

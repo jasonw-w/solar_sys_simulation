@@ -39,7 +39,7 @@ def main():
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
-    agent = Actor_Critic(36, 9).to(device)
+    agent = Actor_Critic(21, 9).to(device)
     agent.load_state_dict(torch.load(model_path, map_location=device))
     agent.eval()
 

@@ -23,11 +23,12 @@ class SolarSystemSimulation:
         speed_ax = plt.axes([0.25, 0.02, 0.5, 0.03])
         self.speed_slider = Slider(
             ax=speed_ax,
-            label='time(dt)',
-            valmin=1e-9,
-            valmax=1e-5,
-            valinit=dt
+            label='log10(dt)',
+            valmin=math.log10(1e-8),
+            valmax=math.log10(1e-2),
+            valinit=math.log10(dt)
         )
+        self.speed_slider.valtext.set_text(f"{dt:.2e}")
         self.speed_slider.on_changed(self.update_speed)
 
     def on_scroll(self, event):
@@ -43,7 +44,8 @@ class SolarSystemSimulation:
                 self.size = 1000
 
     def update_speed(self, val):
-        self.dt=val
+        self.dt = 10**val
+        self.speed_slider.valtext.set_text(f"{self.dt:.2e}")
 
     def add_body(self, body):
         self.bodies.append(body)
